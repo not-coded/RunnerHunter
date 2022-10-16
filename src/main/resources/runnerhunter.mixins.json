@@ -1,12 +1,15 @@
 {
   "required": true,
   "minVersion": "0.8",
-  "package": "net.fabricmc.example.mixin",
+  "package": "net.notcoded.runnerhunter.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
+    "PlayerHitMixin",
+    "PlayerJoinMixin",
+    "PlayerKillMixin",
+    "PlayerLeaveMixin"
   ],
   "client": [
-    "ExampleMixin"
   ],
   "injectors": {
     "defaultRequire": 1

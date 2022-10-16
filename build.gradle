@@ -24,6 +24,16 @@ dependencies {
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
+	modApi "net.fabricmc.fabric-api:fabric-api-base-0.2.0+9f0fb4b898"
+	modApi "net.fabricmc.fabric-api:fabric-command-api-v1-1.0.9+a4467d2a98"
+	modApi "net.fabricmc.fabric-api:fabric-commands-v0-0.2.0+52d3083698"
+	modApi "net.fabricmc.fabric.api:fabric-resource-loader-v0-0.3.1+facf3bbf98"
+	modApi "net.fabricmc.fabric-api:fabric-lifecycle-events-v1-1.2.0+74cc3b2098"
+
+	modApi "me.lucko.fabric.api.permissions:fabric-permissions-api-v0.2"
+
+	modApi "org.spongepowered.api:spongeapi-8.1.0"
+
 	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
 	// You may need to force-disable transitiveness on them.
 }

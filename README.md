@@ -1,9 +1,23 @@
-# Fabric Example Mod
+# Run n' Hunt
 
-## Setup
+## The Idea:
+We  have (?) runner(s) and (?) amount of hunter(s).
 
-For setup instructions please see the [fabric wiki page](https://fabricmc.net/wiki/tutorial:setup) that relates to the IDE that you are using.
+The goal of the runner is to last as long as possible without getting killed by the hunter.
 
-## License
+Once the runner is killed, the hunter who killed the runner will become the runner. (like reverse tag!)
 
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+## Commands:
+
+/pick [hunter/runner] [player]
+
+Permissions: OP **or** runnerhunter.pick 
+
+/runnerhunter [help]
+
+## Ideas:
+
+- Glow effect for the hunter/runner
+- Points system (the longer you survive as runner the more buffs you can get)
+- Buffs could be items, and effects.
+- GUIs
