@@ -1,61 +1,51 @@
 plugins {
-	id 'fabric-loom' version '0.5-SNAPSHOT'
-	id 'maven-publish'
+	id 'fabric-loom' version '0.13-SNAPSHOT'
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
 
 archivesBaseName = project.archives_base_name
-version = project.mod_version
+version = project.mod_version + "+" + project.minecraft_version
 group = project.maven_group
 
-// Repo for CT intermediary mappings
 repositories {
-	maven {
-		name "CombatReforged"
-		url "https://maven.combatreforged.com"
-	}
+	flatDir { dirs("libraries") }
+
+	maven { url 'https://github.com/not-coded/notcoded-maven/raw/fabric/' }
+	maven { url "https://jitpack.io" }
+	maven { url 'https://maven.nucleoid.xyz' }
+	maven { url "https://maven.shedaniel.me/" }
 }
 
 dependencies {
 	//to change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+	mappings loom.officialMojangMappings()
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 
-	modApi "net.fabricmc.fabric-api:fabric-api-base-0.2.0+9f0fb4b898"
-	modApi "net.fabricmc.fabric-api:fabric-command-api-v1-1.0.9+a4467d2a98"
-	modApi "net.fabricmc.fabric-api:fabric-commands-v0-0.2.0+52d3083698"
-	modApi "net.fabricmc.fabric.api:fabric-resource-loader-v0-0.3.1+facf3bbf98"
-	modApi "net.fabricmc.fabric-api:fabric-lifecycle-events-v1-1.2.0+74cc3b2098"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modApi "me.lucko.fabric.api.permissions:fabric-permissions-api-v0.2"
-
-	modApi "org.spongepowered.api:spongeapi-8.1.0"
+	include(modImplementation('me.lucko:fabric-permissions-api:0.2-SNAPSHOT'))
+	include(modImplementation("net.notcoded:codelib:${project.codelib_version}+${project.minecraft_version}"))
+	modImplementation('xyz.nucleoid:fantasy:0.4.0') {exclude(group: "net.fabricmc.fabric-api") }
 
 	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
 	// You may need to force-disable transitiveness on them.
 }
 
 // Custom Manifest and Intermediary mappings declaration
-minecraft {
-	customManifest = "https://gist.githubusercontent.com/rizecookey/4c6142baaccc3875f9b227fe22f2ace5/raw/c8ed74b19f7a5315813c9d4b199798b692a8f359/1.16_combat-6.json"
-	intermediaryUrl = { mcVersion ->
-		return "https://maven.combatreforged.com/net/fabricmc/intermediary/${mcVersion}/intermediary-${mcVersion}-v2.jar";
-	}
+loom {
+	setCustomMinecraftManifest("https://gist.githubusercontent.com/rizecookey/4c6142baaccc3875f9b227fe22f2ace5/raw/c8ed74b19f7a5315813c9d4b199798b692a8f359/1.16_combat-6.json")
+	setIntermediaryUrl("https://maven.rizecookey.net/net/fabricmc/intermediary/${project.minecraft_version}/intermediary-${project.minecraft_version}-v2.jar")
 }
 
 processResources {
 	inputs.property "version", project.version
+	filteringCharset "UTF-8"
 
-	from(sourceSets.main.resources.srcDirs) {
-		include "fabric.mod.json"
+	filesMatching("fabric.mod.json") {
 		expand "version": project.version
-	}
-
-	from(sourceSets.main.resources.srcDirs) {
-		exclude "fabric.mod.json"
 	}
 }
 
@@ -66,35 +56,10 @@ tasks.withType(JavaCompile) {
 	options.encoding = "UTF-8"
 }
 
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = "sources"
-	from sourceSets.main.allSource
-}
-
 jar {
 	from "LICENSE"
 }
 
-// configure the maven publication
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			// add all the jars that should be included when publishing to maven
-			artifact(remapJar) {
-				builtBy remapJar
-			}
-			artifact(sourcesJar) {
-				builtBy remapSourcesJar
-			}
-		}
-	}
-
-	// select the repositories you want to publish to
-	repositories {
-		// uncomment to publish to the local maven
-		// mavenLocal()
-	}
+java {
+	withSourcesJar()
 }

@@ -4,10 +4,8 @@
   "package": "net.notcoded.runnerhunter.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "PlayerHitMixin",
-    "PlayerJoinMixin",
-    "PlayerKillMixin",
-    "PlayerLeaveMixin"
+    "ServerPlayerMixin",
+    "server.MinecraftServerMixin"
   ],
   "client": [
   ],

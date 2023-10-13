@@ -6,11 +6,8 @@ import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 
 
 public class CommandLoader {
-
     public static void registerCommands() {
-        CommandRegistrationCallback.EVENT.register(glow::register);
-        CommandRegistrationCallback.EVENT.register(pick::register);
-        CommandRegistrationCallback.EVENT.register(runnerhunter::register);
-
+        CommandRegistrationCallback.EVENT.register(RunnerHunterCommand::register);
+        CommandRegistrationCallback.EVENT.register(MapCommand::register);
     }
 }
