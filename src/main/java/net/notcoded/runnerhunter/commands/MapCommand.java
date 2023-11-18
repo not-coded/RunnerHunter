@@ -72,7 +72,7 @@ public class MapCommand {
         }
 
         if (type.equalsIgnoreCase("delete")) {
-            RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), null).delete();
+            RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), new RuntimeWorldConfig()).delete();
 
             context.getSource().sendSuccess(new TextComponent("Deleted map called " + map), true);
 
@@ -83,7 +83,7 @@ public class MapCommand {
         }
 
         if(type.equalsIgnoreCase("tp")) {
-            ServerLevel level = RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), null).asWorld();
+            ServerLevel level = RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), new RuntimeWorldConfig()).asWorld();
             context.getSource().getPlayerOrException().teleportTo(level, 0, 80, 0, 0, 0);
 
             context.getSource().sendSuccess(new TextComponent("Teleported to map called: " + map), false);

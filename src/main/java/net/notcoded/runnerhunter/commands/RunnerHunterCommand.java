@@ -40,19 +40,9 @@ public class RunnerHunterCommand {
         dispatcher.register(Commands.literal("runnerhunter")
                 .requires(Permissions.require("runnerhunter.manage", 4))
                 .executes(c -> {
-                    c.getSource().sendFailure(new TextComponent("§cInvalid syntax! Use /runnerhunter help"));
+                    c.getSource().sendFailure(new TextComponent("§cInvalid syntax!"));
                     return 0;
                 })
-                .then(Commands.literal("help")
-                        .executes(c -> {
-                            c.getSource().sendFailure(new TextComponent("§cCommands:"));
-                            c.getSource().sendFailure(new TextComponent("§4 - §c/runnerhunter <game> <option> <onehit> <true/false>"));
-                            c.getSource().sendFailure(new TextComponent("§4 - §c/runnerhunter <game> <option> <glow> <runner/hunters> <true/false>"));
-                            c.getSource().sendFailure(new TextComponent("§4 - §c/runnerhunter <game> <add/remove> <runner/hunter> <player>"));
-                            c.getSource().sendFailure(new TextComponent("§4 - §c/runnerhunter <game> <start/delete>"));
-
-                            return Command.SINGLE_SUCCESS;
-                }))
                 .then(Commands.literal("create")
                         .executes(c -> {
 
@@ -70,7 +60,7 @@ public class RunnerHunterCommand {
                                         .executes(c -> {
                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                             if(game == null) {
-                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                 return 0;
                                             }
 
@@ -94,7 +84,7 @@ public class RunnerHunterCommand {
                                         .executes(c -> {
                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                             if(game == null) {
-                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                 return 0;
                                             }
 
@@ -116,7 +106,7 @@ public class RunnerHunterCommand {
                                                 .executes(c -> {
                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                     if (game == null) {
-                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                         return 0;
                                                     }
 
@@ -140,7 +130,7 @@ public class RunnerHunterCommand {
                                                 .executes(c -> {
                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                     if (game == null) {
-                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                         return 0;
                                                     }
 
@@ -167,7 +157,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                 return 0;
                                                             }
 
@@ -198,7 +188,7 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                         return 0;
                                                                     }
 
@@ -226,7 +216,7 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                         return 0;
                                                                     }
 
@@ -250,7 +240,7 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                         return 0;
                                                                     }
 
@@ -277,7 +267,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                 return 0;
                                                             }
 
@@ -309,7 +299,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                 return 0;
                                                             }
 
@@ -342,7 +332,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                 return 0;
                                                             }
 
@@ -377,7 +367,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if(game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                 return 0;
                                                             }
 
@@ -402,7 +392,7 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                         return 0;
                                                                     }
 
@@ -426,7 +416,7 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game!"));
+                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
                                                                         return 0;
                                                                     }
 

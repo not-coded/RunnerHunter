@@ -1,4 +1,4 @@
-package net.notcoded.runnerhunter.mixin.server;
+package net.notcoded.runnerhunter.mixin;
 
 import net.minecraft.server.MinecraftServer;
 import net.notcoded.runnerhunter.utilities.ServerUtil;

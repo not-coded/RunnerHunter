@@ -15,10 +15,7 @@ public class ServerUtil {
 
     public static void everyTick() {
         totalTickCount++;
-
-        switch (totalTickCount % 20) {
-            case 0 -> everySecond();
-        }
+        if (totalTickCount % 20 == 0) everySecond();
     }
     static void everySecond() {
         totalSecondCount++;

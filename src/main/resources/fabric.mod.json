@@ -10,7 +10,8 @@
   ],
   "contact": {
     "homepage": "https://notcoded.is-a.dev/",
-    "sources": "https://github.com/not-coded/RunnerHunter"
+    "sources": "https://github.com/not-coded/RunnerHunter",
+    "issues": "https://github.com/not-coded/RunnerHunter/issues"
   },
 
   "license": "GPL-3.0",
@@ -30,8 +31,9 @@
     "fabricloader": ">=0.7.4",
     "fabric": "*",
     "minecraft": ["1.16.3-combat.8.c", "1.16.2-1.16.combat-6"],
-    "codelib": "*",
-    "fantasy": "*",
-    "fabric-permissions-api-v0": "*"
+    "codelib": ">=1.0.1",
+    "fantasy": ">=0.4.0",
+    "fabric-permissions-api-v0": ">=0.2-SNAPSHOT",
+    "java": ">=8"
   }
 }
