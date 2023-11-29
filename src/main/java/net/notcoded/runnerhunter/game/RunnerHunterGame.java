@@ -133,7 +133,6 @@ public class RunnerHunterGame {
                     this.isEnding = false;
 
                     for(AccuratePlayer player : this.getViewers()) RunnerHunterGame.leave(player.get());
-                    this.isEnding = false;
 
                     RunnerHunterGame.games.remove(this);
                     return;
@@ -142,7 +141,7 @@ public class RunnerHunterGame {
                 this.updateInfo();
 
                 if(this.time > 0) this.time--;
-                if(this.time <= 0) this.endGame();
+                if(this.time <= 0 && !this.isEnding) this.endGame();
             }
         }
     }
