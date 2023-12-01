@@ -49,8 +49,9 @@ public class ServerPlayerMixin {
                 AccuratePlayer accurateHunter = game.hunters.get(new Random().nextInt(game.hunters.size()));
 
                 if(!game.setRunner(AccuratePlayer.create(accurateHunter.get()), true, true)) return;
-            } else {
+            } else if (!game.isEnding){
                 game.endGame();
+                System.out.println("welp, ending onPlayerLeave()");
             }
         }
     }

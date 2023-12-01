@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import com.natamus.saveandloadinventories.util.Util;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -18,14 +19,19 @@ import net.minecraft.world.phys.Vec3;
 import net.notcoded.codelib.players.AccuratePlayer;
 import net.notcoded.codelib.util.pos.EntityPos;
 import net.notcoded.codelib.util.world.WorldUtil;
+import net.notcoded.runnerhunter.RunnerHunter;
 import net.notcoded.runnerhunter.game.GameConfiguration;
 import net.notcoded.runnerhunter.game.RunnerHunterGame;
 import net.notcoded.runnerhunter.game.level.RunnerHunterLevel;
+import net.notcoded.runnerhunter.utilities.RunnerHunterUtil;
 import net.notcoded.runnerhunter.utilities.player.PlayerDataManager;
 
 import java.util.ArrayList;
 import java.util.UUID;
 import java.util.stream.Stream;
+
+import static net.notcoded.runnerhunter.utilities.RunnerHunterUtil.mainColor;
+import static net.notcoded.runnerhunter.utilities.RunnerHunterUtil.secondaryColor;
 
 public class RunnerHunterCommand {
 
@@ -40,7 +46,7 @@ public class RunnerHunterCommand {
         dispatcher.register(Commands.literal("runnerhunter")
                 .requires(Permissions.require("runnerhunter.manage", 4))
                 .executes(c -> {
-                    c.getSource().sendFailure(new TextComponent("§cInvalid syntax!"));
+                    c.getSource().sendFailure(new TextComponent(mainColor + "Invalid syntax!"));
                     return 0;
                 })
                 .then(Commands.literal("create")
@@ -49,7 +55,8 @@ public class RunnerHunterCommand {
                             ServerPlayer player = c.getSource().getPlayerOrException();
                             RunnerHunterGame game = new RunnerHunterGame(AccuratePlayer.create(player), new ArrayList<>(), new GameConfiguration(false, false, false, 300, new RunnerHunterLevel(player.getLevel(), new EntityPos(player.position()), new EntityPos(player.position().add(0, 0, 10)))));
 
-                            c.getSource().sendFailure(new TextComponent("§cCreated game with id §4" + game.gameID));
+                            c.getSource().sendSuccess(new TextComponent(String.format("%sCreated game with id %s%s", mainColor, secondaryColor, game.gameID)), true);
+
 
                             return Command.SINGLE_SUCCESS;
                         }))
@@ -60,22 +67,22 @@ public class RunnerHunterCommand {
                                         .executes(c -> {
                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                             if(game == null) {
-                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                 return 0;
                                             }
 
                                             if(game.hasStarted) {
-                                                c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                 return 0;
                                             }
 
                                             if(game.hunters.isEmpty()) {
-                                                c.getSource().sendFailure(new TextComponent("§cThere must be atleast 1 hunter for the game to start!"));
+                                                c.getSource().sendFailure(new TextComponent(mainColor + "There must be atleast 1 hunter for the game to start!"));
                                                 return 0;
                                             }
 
                                             game.startGame();
-                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + " §chas been started!"), true);
+                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s %shas been started!", mainColor, secondaryColor, game.gameID, mainColor)), true);
 
                                             return 1;
                                         })
@@ -84,19 +91,21 @@ public class RunnerHunterCommand {
                                         .executes(c -> {
                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                             if(game == null) {
-                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                 return 0;
                                             }
 
                                             if(game.hasStarted) {
-                                                c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
-                                                return 0;
+                                                try {
+                                                    game.shouldWait = false;
+                                                    game.endGame();
+                                                    game.second();
+                                                } catch (Exception ignored) { } // whoops
                                             }
 
-                                            game.shouldWait = false;
-                                            game.endGame();
+                                            game.removeBossbar();
                                             RunnerHunterGame.games.remove(game);
-                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + " §chas been deleted!"), true);
+                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s %shas been deleted!", mainColor, secondaryColor, game.gameID, mainColor)), true);
 
                                             return 1;
                                         })
@@ -106,22 +115,23 @@ public class RunnerHunterCommand {
                                                 .executes(c -> {
                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                     if (game == null) {
-                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                         return 0;
                                                     }
 
                                                     if (game.hasStarted) {
-                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                         return 0;
                                                     }
 
                                                     if(game.runner == null) {
-                                                        c.getSource().sendFailure(new TextComponent("§cThe runner is not set!"));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_RUNNER, null));
                                                         return 0;
                                                     }
 
                                                     game.runner = null;
-                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's runner has been reset!"), true);
+                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner has been reset.", mainColor, secondaryColor, game.gameID, mainColor)), true);
+
 
                                                     return 1;
                                                 })
@@ -130,22 +140,22 @@ public class RunnerHunterCommand {
                                                 .executes(c -> {
                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                     if (game == null) {
-                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                         return 0;
                                                     }
 
                                                     if (game.hasStarted) {
-                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                         return 0;
                                                     }
 
                                                     if(game.hunters.isEmpty()) {
-                                                        c.getSource().sendFailure(new TextComponent("§cThe hunters are empty!"));
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_HUNTER, null));
                                                         return 0;
                                                     }
 
                                                     game.hunters = new ArrayList<>();
-                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's hunters has been reset!"), true);
+                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's hunters has been reset.", mainColor, secondaryColor, game.gameID, mainColor)), true);
 
                                                     return 1;
                                                 })
@@ -157,7 +167,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                 return 0;
                                                             }
 
@@ -165,18 +175,21 @@ public class RunnerHunterCommand {
                                                             RunnerHunterGame playerGame = PlayerDataManager.get(player).runnerHunterGame;
 
                                                             if(playerGame != null && !playerGame.equals(game)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already in a game!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_IN_GAME, player));
                                                                 return 0;
                                                             }
 
                                                             AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
 
-                                                            if(!game.setRunner(accuratePlayer, game.hunters.contains(accuratePlayer), true)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already the runner!"));
+                                                            if(game.runner == null && !game.hasStarted) {
+                                                                game.hunters.remove(accuratePlayer);
+                                                                game.runner = accuratePlayer;
+                                                            } else if(!game.setRunner(accuratePlayer, game.hunters.contains(accuratePlayer), true)) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_RUNNER, player));
                                                                 return 0;
                                                             }
 
-                                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's runner has been set to " + player.getScoreboardName()), true);
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner has been set to %s%s", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, player.getScoreboardName())), true);
 
                                                             return 1;
                                                         })
@@ -188,24 +201,24 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     if (game.hasStarted) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     ServerLevel level = DimensionArgument.getDimension(c, "dimension");
                                                                     if(game.config.level.world.equals(level)) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cThat is already the dimension!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_DIMENSION, level));
                                                                         return 0;
                                                                     }
 
                                                                     game.config.level.world = level;
 
-                                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's dimension has been set to " + WorldUtil.getWorldName(level)), true);
+                                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's dimension has been set to %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, WorldUtil.getWorldName(level), mainColor)), true);
 
                                                                     return 1;
                                                                 })
@@ -216,12 +229,12 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     if (game.hasStarted) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                         return 0;
                                                                     }
 
@@ -229,7 +242,8 @@ public class RunnerHunterCommand {
 
 
                                                                     game.config.level.runnerPos = new EntityPos(position);
-                                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's runner spawn position has been set to " + position), true);
+                                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner spawn position has been set to %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, position, mainColor)), true);
+
 
                                                                     return 1;
                                                                 })
@@ -240,12 +254,12 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     if (game.hasStarted) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                         return 0;
                                                                     }
 
@@ -253,7 +267,7 @@ public class RunnerHunterCommand {
 
 
                                                                     game.config.level.huntersPos = new EntityPos(position);
-                                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's hunter spawn position has been set to " + position), true);
+                                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's hunter spawn position has been set to %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, position, mainColor)), true);
 
                                                                     return 1;
                                                                 })
@@ -267,7 +281,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                 return 0;
                                                             }
 
@@ -275,18 +289,22 @@ public class RunnerHunterCommand {
                                                             RunnerHunterGame playerGame = PlayerDataManager.get(player).runnerHunterGame;
 
                                                             if(playerGame != null && !playerGame.equals(game)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already in a game!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_IN_GAME, player));
+                                                                return 0;
+                                                            }
+
+                                                            if(game.runner == null) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_RUNNER, player));
                                                                 return 0;
                                                             }
 
                                                             AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
-
                                                             if(!game.addHunter(accuratePlayer, game.runner.equals(accuratePlayer))) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already a hunter!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_HUNTER, player));
                                                                 return 0;
                                                             }
 
-                                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's hunter has been added to " + player.getScoreboardName()), true);
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%s%s %shas been added to Game %s%s%s's hunters.", secondaryColor, player.getScoreboardName(), mainColor, secondaryColor, game.gameID, mainColor)), true);
 
                                                             return 1;
                                                         })
@@ -299,7 +317,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                 return 0;
                                                             }
 
@@ -307,21 +325,22 @@ public class RunnerHunterCommand {
                                                             RunnerHunterGame playerGame = PlayerDataManager.get(player).runnerHunterGame;
 
                                                             if(playerGame != null && !playerGame.equals(game)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already in a game!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_IN_GAME, player));
                                                                 return 0;
                                                             }
 
                                                             AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
 
                                                             if(!game.runner.equals(accuratePlayer)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is not the runner!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NOT_RUNNER, player));
                                                                 return 0;
                                                             }
 
                                                             game.runner = null;
-                                                            RunnerHunterGame.leave(player);
+                                                            if(game.hasStarted) RunnerHunterGame.leave(player);
 
-                                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's runner has been set to no one"), true);
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner has been set to %sno one%s", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, mainColor)), true);
+
 
                                                             return 1;
                                                         })
@@ -332,7 +351,7 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if (game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                 return 0;
                                                             }
 
@@ -340,21 +359,22 @@ public class RunnerHunterCommand {
                                                             RunnerHunterGame playerGame = PlayerDataManager.get(player).runnerHunterGame;
 
                                                             if(playerGame != null && !playerGame.equals(game)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is already in a game!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.ALREADY_IN_GAME, player));
                                                                 return 0;
                                                             }
 
                                                             AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
 
                                                             if(!game.hunters.contains(accuratePlayer)) {
-                                                                c.getSource().sendFailure(new TextComponent("§c" + player.getScoreboardName() + " is not a hunter!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NOT_HUNTER, player));
                                                                 return 0;
                                                             }
 
                                                             game.hunters.remove(accuratePlayer);
-                                                            RunnerHunterGame.leave(player);
+                                                            if(game.hasStarted) RunnerHunterGame.leave(player);
 
-                                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's hunter " + player.getScoreboardName() + " has been removed"), true);
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%s%s %shas been removed from Game %s%s%s's hunters.", secondaryColor, player.getScoreboardName(), mainColor, secondaryColor, game.gameID, mainColor)), true);
+
 
                                                             return 1;
                                                         })
@@ -367,12 +387,12 @@ public class RunnerHunterCommand {
                                                         .executes(c -> {
                                                             RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                             if(game == null) {
-                                                                c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                 return 0;
                                                             }
 
                                                             if(game.hasStarted) {
-                                                                c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                 return 0;
                                                             }
 
@@ -380,7 +400,45 @@ public class RunnerHunterCommand {
 
                                                             game.config.isOneHit = value;
 
-                                                            c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's option OneHit was " + ((value) ? "Enabled" : "Disabled")), true);
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option OneHit was %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, ((value) ? "Enabled" : "Disabled"), mainColor)), true);
+
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                        .then(Commands.literal("inventory")
+                                                .requires(commandSourceStack -> RunnerHunter.isInventoryLoadingLoaded)
+                                                .then(Commands.argument("name", StringArgumentType.word())
+                                                        .suggests(((context, builder) -> SharedSuggestionProvider.suggest((RunnerHunterUtil.getListOfInventories()), builder)))
+                                                        .executes(c -> {
+                                                            RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
+                                                            if(game == null) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            if(game.hasStarted) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            String inventoryname = StringArgumentType.getString(c, "name");
+
+                                                            if(inventoryname.equalsIgnoreCase("reset") || inventoryname.equalsIgnoreCase("none")) {
+                                                                game.config.inventoryName = "";
+                                                                c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option Inventory Loading Name was %sreset%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, mainColor)), true);
+
+                                                                return 1;
+                                                            }
+
+                                                            if(inventoryname.trim().isEmpty() || Util.getGearStringFromFile(inventoryname).isEmpty()) {
+                                                                c.getSource().sendFailure(new TextComponent(mainColor + "The inventory name '" + inventoryname + "' is invalid."));
+                                                                return 0;
+                                                            }
+
+                                                            game.config.inventoryName = inventoryname;
+
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option Inventory Loading Name has been set to %s'%s'%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, inventoryname, mainColor)), true);
 
                                                             return 1;
                                                         })
@@ -392,12 +450,12 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     if (game.hasStarted) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                         return 0;
                                                                     }
 
@@ -405,7 +463,7 @@ public class RunnerHunterCommand {
 
                                                                     game.config.glowRunner = value;
 
-                                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's option Glow Runner was " + ((value) ? "Enabled" : "Disabled")), true);
+                                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option Glow Runner was %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, ((value) ? "Enabled" : "Disabled"), mainColor)), true);
 
                                                                     return 1;
                                                                 })
@@ -416,12 +474,12 @@ public class RunnerHunterCommand {
                                                                 .executes(c -> {
                                                                     RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
                                                                     if (game == null) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cInvalid game! Create a game using /runnerhunter create."));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
                                                                         return 0;
                                                                     }
 
                                                                     if (game.hasStarted) {
-                                                                        c.getSource().sendFailure(new TextComponent("§cYou cannot modify a game that's already started!"));
+                                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
                                                                         return 0;
                                                                     }
 
@@ -429,7 +487,7 @@ public class RunnerHunterCommand {
 
                                                                     game.config.glowHunters = value;
 
-                                                                    c.getSource().sendSuccess(new TextComponent("§cGame §4" + game.gameID + "§c's option Glow Hunters was " + ((value) ? "Enabled" : "Disabled")), true);
+                                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option Glow Hunters was %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, ((value) ? "Enabled" : "Disabled"), mainColor)), true);
 
                                                                     return 1;
                                                                 })

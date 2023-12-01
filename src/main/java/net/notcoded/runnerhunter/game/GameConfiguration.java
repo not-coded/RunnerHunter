@@ -12,6 +12,8 @@ public class GameConfiguration {
 
     public boolean glowRunner;
 
+    public String inventoryName = "";
+
     public GameConfiguration(boolean glowHunters, boolean glowRunner, boolean isOneHit, int time, @NotNull RunnerHunterLevel level) {
         this.isOneHit = isOneHit;
         this.level = level;

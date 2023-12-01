@@ -10,10 +10,13 @@ public class PlayerData {
     // Stuff not saved in files
     public RunnerHunterGame runnerHunterGame;
 
+    public int timeAsRunner;
+
     public PlayerData(SavedPlayerData savedData) {
         this.savedData = savedData;
 
         this.runnerHunterGame = null;
+        timeAsRunner = 0;
     }
 
 }

@@ -1,5 +1,6 @@
 package net.notcoded.runnerhunter.utilities;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.server.MinecraftServer;
 import net.notcoded.runnerhunter.RunnerHunter;
 import net.notcoded.runnerhunter.game.RunnerHunterGame;
@@ -11,6 +12,7 @@ public class ServerUtil {
     public static void firstTick(MinecraftServer server) {
         RunnerHunter.server = server;
         RunnerHunter.fantasy = Fantasy.get(server);
+        RunnerHunter.isInventoryLoadingLoaded = FabricLoader.getInstance().isModLoaded("saveandloadinventories-fabric");
     }
 
     public static void everyTick() {

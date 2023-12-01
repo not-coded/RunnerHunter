@@ -1,11 +1,10 @@
 package net.notcoded.runnerhunter.game;
 
+import com.natamus.collective_fabric.functions.PlayerFunctions;
 import net.minecraft.Util;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.bossevents.CustomBossEvent;
-import net.minecraft.server.bossevents.CustomBossEvents;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -25,6 +24,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.UUID;
+
+import static net.notcoded.runnerhunter.utilities.RunnerHunterUtil.mainColor;
+import static net.notcoded.runnerhunter.utilities.RunnerHunterUtil.secondaryColor;
 
 public class RunnerHunterGame {
 
@@ -71,11 +73,11 @@ public class RunnerHunterGame {
     }
 
     public boolean failSafe() {
-        return !this.hunters.isEmpty() || (!this.isEnding || this.winner != null) || config == null;
+        return (this.hasStarted && this.hunters.isEmpty()) || config == null;
     }
 
     public static void leave(ServerPlayer player) {
-        PlayerData data =  PlayerDataManager.get(player);
+        PlayerData data = PlayerDataManager.get(player);
 
         player.clearFire();
         player.clearSleepingPos();
@@ -83,29 +85,37 @@ public class RunnerHunterGame {
         player.getEnderChestInventory().clearContent();
         player.setHealth(player.getMaxHealth());
         player.setGlowing(false);
-        player.kill();
         PlayerUtil.sendBossbar(PlayerDataManager.get(player).runnerHunterGame.BOSSBAR, player, true);
+
+        player.setRespawnPosition(RunnerHunter.server.overworld().dimension(), RunnerHunter.server.overworld().getSharedSpawnPos(), 0, true, false);
 
         AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
         if(data.runnerHunterGame.hunters.contains(accuratePlayer) || (data.runnerHunterGame.isEnding && data.runnerHunterGame.winner != accuratePlayer)) {
             data.savedData.losses++;
         }
 
+        data.runnerHunterGame.hunters.remove(accuratePlayer);
+        if(data.runnerHunterGame.runner.equals(accuratePlayer)) data.runnerHunterGame.runner = null;
+
+        data.timeAsRunner = 0;
         data.runnerHunterGame = null;
     }
 
     public void second() {
-        if(!this.failSafe()) {
+        if(this.failSafe()) {
             this.shouldWait = false;
             this.hasStarted = true;
-            if(!this.isEnding) this.endGame();
+            if(!this.isEnding) {
+                this.endGame();
+                System.out.println("welp, ending second() failsafe()");
+            }
         }
         if(!this.hasStarted && this.shouldStart) {
             this.currentStartTime--;
 
             if (5 - this.currentStartTime >= 5) {
                 for(AccuratePlayer player : this.getViewers()) {
-                    PlayerUtil.sendSound(player.get(), new EntityPos(player.get()), SoundEvents.NOTE_BLOCK_HAT, SoundSource.BLOCKS, 10, 2);
+                    PlayerUtil.sendSound(player.get(), new EntityPos(player.get()), SoundEvents.NOTE_BLOCK_PLING, SoundSource.BLOCKS, 10, 2);
                 }
                 this.hasStarted = true;
                 return;
@@ -134,14 +144,21 @@ public class RunnerHunterGame {
 
                     for(AccuratePlayer player : this.getViewers()) RunnerHunterGame.leave(player.get());
 
+                    this.removeBossbar();
                     RunnerHunterGame.games.remove(this);
+                    this.shouldStart = false;
                     return;
                 }
             } else {
                 this.updateInfo();
 
+                PlayerDataManager.get(this.runner.get()).timeAsRunner++;
+
                 if(this.time > 0) this.time--;
-                if(this.time <= 0 && !this.isEnding) this.endGame();
+                if(this.time <= 0 && !this.isEnding) {
+                    System.out.println("welp, ending second() started ending");
+                    this.endGame();
+                }
             }
         }
     }
@@ -162,6 +179,7 @@ public class RunnerHunterGame {
             player.setGlowing(this.config.glowRunner);
             PlayerDataManager.get(player).runnerHunterGame = this;
             this.config.level.runnerPos.teleportPlayer(this.config.level.world, player);
+            if(RunnerHunter.isInventoryLoadingLoaded && !this.config.inventoryName.isEmpty()) PlayerFunctions.setPlayerGearFromString(player, com.natamus.saveandloadinventories.util.Util.getGearStringFromFile(this.config.inventoryName));
             PlayerUtil.sendBossbar(this.BOSSBAR, player, false);
         } else {
             player.setGlowing(this.config.glowRunner);
@@ -172,7 +190,7 @@ public class RunnerHunterGame {
         PlayerDataManager.get(player).savedData.swaps++;
 
         if(announce) {
-            String message = String.format("§c§l%s §cis now the runner! §4[§c%s %s %s§4]", player.getScoreboardName(), player.getX(), player.getY(), player.getZ());
+            String message = String.format("%s§l%s %sis now the runner! %s[%s%s %s %s%s]", secondaryColor, player.getScoreboardName(), mainColor, secondaryColor, mainColor, player.getX(), player.getY(), player.getZ(), secondaryColor);
             for(AccuratePlayer ap : this.getViewers()) {
                 ap.get().sendMessage(new TextComponent(message), Util.NIL_UUID);
             }
@@ -183,7 +201,12 @@ public class RunnerHunterGame {
 
     public boolean addHunter(AccuratePlayer accuratePlayer, boolean inGame) {
         if(this.hunters.contains(accuratePlayer)) return false;
-        if(this.runner.equals(accuratePlayer) && !this.switchRoles(runner, this.hunters.get(new Random().nextInt(this.hunters.size())))) return false;
+        int size = this.hunters.size();
+        System.out.println(size);
+        if(size > 0) size = new Random().nextInt(this.hunters.size());
+        System.out.println(size);
+
+        if(this.runner.equals(accuratePlayer) && !this.switchRoles(runner, this.hunters.get(size))) return false;
 
         ServerPlayer player = accuratePlayer.get();
 
@@ -201,6 +224,9 @@ public class RunnerHunterGame {
             player.setGlowing(this.config.glowHunters);
             PlayerDataManager.get(player).runnerHunterGame = this;
             this.config.level.huntersPos.teleportPlayer(this.config.level.world, player);
+            player.setRespawnPosition(this.config.level.world.dimension(), this.config.level.huntersPos.toBlockPos(), 0, true, false);
+            if(RunnerHunter.isInventoryLoadingLoaded && !this.config.inventoryName.isEmpty()) PlayerFunctions.setPlayerGearFromString(player, com.natamus.saveandloadinventories.util.Util.getGearStringFromFile(this.config.inventoryName));
+            PlayerUtil.sendBossbar(this.BOSSBAR, player, false);
         } else {
             player.setGlowing(this.config.glowHunters);
             player.setHealth(player.getMaxHealth());
@@ -211,7 +237,7 @@ public class RunnerHunterGame {
     }
 
     public RunnerHunterGame startGame() {
-        this.hasStarted = true;
+        //this.hasStarted = true;
         this.shouldStart = true;
 
         ServerPlayer runner = this.runner.get();
@@ -225,6 +251,8 @@ public class RunnerHunterGame {
         runner.setGlowing(this.config.glowRunner);
         PlayerDataManager.get(runner).runnerHunterGame = this;
         this.config.level.runnerPos.teleportPlayer(this.config.level.world, runner);
+        runner.setRespawnPosition(this.config.level.world.dimension(), this.config.level.huntersPos.toBlockPos(), 0, true, false);
+        if(RunnerHunter.isInventoryLoadingLoaded && !this.config.inventoryName.isEmpty()) PlayerFunctions.setPlayerGearFromString(runner, com.natamus.saveandloadinventories.util.Util.getGearStringFromFile(this.config.inventoryName));
 
         for(AccuratePlayer accurateHunter : this.hunters) {
             ServerPlayer hunter = accurateHunter.get();
@@ -237,7 +265,8 @@ public class RunnerHunterGame {
             hunter.setGlowing(this.config.glowHunters);
             PlayerDataManager.get(hunter).runnerHunterGame = this;
             this.config.level.huntersPos.teleportPlayer(this.config.level.world, hunter);
-
+            hunter.setRespawnPosition(this.config.level.world.dimension(), this.config.level.huntersPos.toBlockPos(), 0, true, false);
+            if(RunnerHunter.isInventoryLoadingLoaded && !this.config.inventoryName.isEmpty()) PlayerFunctions.setPlayerGearFromString(hunter, com.natamus.saveandloadinventories.util.Util.getGearStringFromFile(this.config.inventoryName));
             hunter.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 100, 1, true, true));
             hunter.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 100, 255, true, true));
             hunter.addEffect(new MobEffectInstance(MobEffects.JUMP, 100, 255, true, true));
@@ -254,7 +283,7 @@ public class RunnerHunterGame {
     public void endGame() {
 
         this.isEnding = true;
-        RunnerHunter.server.getCustomBossEvents().remove(this.BOSSBAR);
+        this.removeBossbar();
 
         AccuratePlayer player = this.runner;
         this.winner = player;
@@ -262,19 +291,19 @@ public class RunnerHunterGame {
         PlayerDataManager.get(player.get()).savedData.wins++;
 
         for(AccuratePlayer viewer : this.getViewers()) {
-            PlayerUtil.sendTitle(viewer.get(), "§4" + player.get().getScoreboardName(), "§chas won the game!", 1, 100, 1);
+            PlayerUtil.sendTitle(viewer.get(), secondaryColor + player.get().getScoreboardName(), mainColor + "has won the game!", 1, 100, 1);
         }
     }
 
     public void updateInfo() {
         for(AccuratePlayer player : this.getViewers()) {
-            PlayerUtil.sendActionbar(player.get(), String.format("§4Runner §7» §c%s §8| §4Hunters: §7» §c%s", this.runner.get().getScoreboardName(), this.hunters.size()));
+            PlayerUtil.sendActionbar(player.get(), String.format("%sRunner §7» %s%s §8| %sHunters: §7» %s%s", secondaryColor, mainColor, this.runner.get().getScoreboardName(), secondaryColor, mainColor, this.hunters.size()));
         }
 
         CustomBossEvent bossbar = this.BOSSBAR;
         if(this.time > 0) {
             String[] parsedTime = TickUtil.minuteTimeStamp(time * 20);
-            TextComponent updatedTime = new TextComponent("§7Game end in §c" + parsedTime[0] + ":" + parsedTime[1] + "§7...");
+            TextComponent updatedTime = new TextComponent("§7Game end in " + mainColor + parsedTime[0] + secondaryColor + ":" + mainColor + parsedTime[1] + "§7...");
 
             bossbar.setValue(this.time);
             bossbar.setName(updatedTime);
@@ -286,14 +315,22 @@ public class RunnerHunterGame {
         CustomBossEvent bossbar = RunnerHunter.server.getCustomBossEvents().create(new ResourceLocation("runnerhunter", this.gameID.toString()), new TextComponent(""));
 
         String[] parsedTime = TickUtil.minuteTimeStamp(time * 20);
-        TextComponent updatedTime = new TextComponent("§7Game end in §c" + parsedTime[0] + ":" + parsedTime[1] + "§7...");
+        TextComponent updatedTime = new TextComponent("§7Game end in " + mainColor + parsedTime[0] + secondaryColor + ":" + mainColor + parsedTime[1] + "§7...");
         bossbar.setName(updatedTime);
 
         bossbar.setValue(this.time);
         bossbar.setMax(this.config.time);
-        bossbar.setColor(BossEvent.BossBarColor.RED);
+        bossbar.setColor(BossEvent.BossBarColor.BLUE);
 
         return bossbar;
+    }
+
+    public boolean removeBossbar() {
+        CustomBossEvent bossbar = this.BOSSBAR;
+        if(bossbar == null) return false;
+
+        RunnerHunter.server.getCustomBossEvents().remove(this.BOSSBAR);
+        return true;
     }
 
 

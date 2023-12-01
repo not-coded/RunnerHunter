@@ -5,7 +5,10 @@
   "compatibilityLevel": "JAVA_8",
   "server": [
     "ServerPlayerMixin",
-    "MinecraftServerMixin"
+    "MinecraftServerMixin",
+    "entity.PrimedTntMixin",
+    "entity.MinecartTNTMixin",
+    "items.CrossbowItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

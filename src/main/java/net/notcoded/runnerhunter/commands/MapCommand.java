@@ -17,6 +17,7 @@ import net.minecraft.world.Difficulty;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.notcoded.runnerhunter.RunnerHunter;
+import net.notcoded.runnerhunter.utilities.RunnerHunterUtil;
 import org.apache.commons.io.FileUtils;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
 
@@ -40,7 +41,7 @@ public class MapCommand {
         String map = StringArgumentType.getString(context, "map");
 
         if(type.trim().isEmpty() || map.trim().isEmpty()) {
-            context.getSource().sendFailure(new TextComponent("Invalid name!"));
+            context.getSource().sendFailure(new TextComponent(RunnerHunterUtil.mainColor + "Invalid name!"));
             return 1;
         }
 
@@ -60,9 +61,10 @@ public class MapCommand {
                             .setGameRule(GameRules.RULE_DO_IMMEDIATE_RESPAWN, true)
                             .setGameRule(GameRules.RULE_DOMOBSPAWNING, false)
                             .setGameRule(GameRules.RULE_SHOWDEATHMESSAGES, true)
+                            .setGameRule(GameRules.RULE_FALL_DAMAGE, false)
                             .setGameRule(GameRules.RULE_SPAWN_RADIUS, 0))).asWorld();
 
-            context.getSource().sendSuccess(new TextComponent("Created map called " + map), true);
+            context.getSource().sendSuccess(new TextComponent(RunnerHunterUtil.mainColor + "Created map called " + map), true);
 
             try {
                 context.getSource().getPlayerOrException().teleportTo(level, 0, 80, 0, 0, 0);
@@ -72,21 +74,17 @@ public class MapCommand {
         }
 
         if (type.equalsIgnoreCase("delete")) {
-            RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), new RuntimeWorldConfig()).delete();
+            RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), null).delete();
 
-            context.getSource().sendSuccess(new TextComponent("Deleted map called " + map), true);
-
-            try {
-                FileUtils.forceDeleteOnExit(new File("/world/dimensions/" + mapname[0], mapname[1]));
-            } catch (Exception ignored) { }
+            context.getSource().sendSuccess(new TextComponent(RunnerHunterUtil.mainColor + "Deleted map called " + map), true);
             return 1;
         }
 
         if(type.equalsIgnoreCase("tp")) {
-            ServerLevel level = RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), new RuntimeWorldConfig()).asWorld();
+            ServerLevel level = RunnerHunter.fantasy.getOrOpenPersistentWorld(ResourceKey.create(Registry.DIMENSION_REGISTRY, new ResourceLocation(mapname[0], mapname[1])).location(), null).asWorld();
             context.getSource().getPlayerOrException().teleportTo(level, 0, 80, 0, 0, 0);
 
-            context.getSource().sendSuccess(new TextComponent("Teleported to map called: " + map), false);
+            context.getSource().sendSuccess(new TextComponent(RunnerHunterUtil.mainColor + "Teleported to map called: " + map), false);
 
             return 1;
         }

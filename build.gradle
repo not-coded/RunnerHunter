@@ -13,6 +13,7 @@ repositories {
 	flatDir { dirs("libraries") }
 
 	maven { url 'https://github.com/not-coded/notcoded-maven/raw/fabric/' }
+	maven { url 'https://github.com/ricksouth/serilum-forge-maven/raw/maven/' }
 	maven { url "https://jitpack.io" }
 	maven { url 'https://maven.nucleoid.xyz' }
 	maven { url "https://maven.shedaniel.me/" }
@@ -29,6 +30,10 @@ dependencies {
 	include(modImplementation('me.lucko:fabric-permissions-api:0.2-SNAPSHOT'))
 	include(modImplementation("net.notcoded:codelib:${project.codelib_version}+${project.minecraft_version}"))
 	modImplementation('xyz.nucleoid:fantasy:0.4.0') {exclude(group: "net.fabricmc.fabric-api") }
+
+	// Optional Inventory Loading option
+	modImplementation('com.natamus:saveandloadinventories_fabric:1.16.5-2.4')
+	modApi('com.natamus.collective:collective-fabric:1.16.5-5.50')
 
 	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
 	// You may need to force-disable transitiveness on them.

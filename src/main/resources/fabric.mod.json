@@ -35,5 +35,9 @@
     "fantasy": ">=0.4.0",
     "fabric-permissions-api-v0": ">=0.2-SNAPSHOT",
     "java": ">=8"
+  },
+  "suggests": {
+    "saveandloadinventories": "*",
+    "collective": "*"
   }
 }
