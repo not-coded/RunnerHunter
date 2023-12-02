@@ -16,7 +16,7 @@ public class PlayerData {
         this.savedData = savedData;
 
         this.runnerHunterGame = null;
-        timeAsRunner = 0;
+        this.timeAsRunner = 0;
     }
 
 }

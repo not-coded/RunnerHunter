@@ -18,10 +18,7 @@ import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.notcoded.runnerhunter.RunnerHunter;
 import net.notcoded.runnerhunter.utilities.RunnerHunterUtil;
-import org.apache.commons.io.FileUtils;
 import xyz.nucleoid.fantasy.RuntimeWorldConfig;
-
-import java.io.File;
 
 public class MapCommand {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, boolean bl) {

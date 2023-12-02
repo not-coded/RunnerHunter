@@ -3,6 +3,7 @@ package net.notcoded.runnerhunter.commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.natamus.saveandloadinventories.util.Util;
 import me.lucko.fabric.api.permissions.v0.Permissions;
@@ -12,7 +13,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.coordinates.Vec3Argument;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
@@ -53,10 +54,9 @@ public class RunnerHunterCommand {
                         .executes(c -> {
 
                             ServerPlayer player = c.getSource().getPlayerOrException();
-                            RunnerHunterGame game = new RunnerHunterGame(AccuratePlayer.create(player), new ArrayList<>(), new GameConfiguration(false, false, false, 300, new RunnerHunterLevel(player.getLevel(), new EntityPos(player.position()), new EntityPos(player.position().add(0, 0, 10)))));
+                            RunnerHunterGame game = new RunnerHunterGame(AccuratePlayer.create(player), new ArrayList<>(), new GameConfiguration(false, false, false, false, 250, new RunnerHunterLevel(player.getLevel(), new EntityPos(player.position()), new EntityPos(player.position().add(0, 0, 10)))));
 
-                            c.getSource().sendSuccess(new TextComponent(String.format("%sCreated game with id %s%s", mainColor, secondaryColor, game.gameID)), true);
-
+                            c.getSource().sendSuccess(new TextComponent(String.format("%sCreated game with id %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor)), true);
 
                             return Command.SINGLE_SUCCESS;
                         }))
@@ -78,6 +78,11 @@ public class RunnerHunterCommand {
 
                                             if(game.hunters.isEmpty()) {
                                                 c.getSource().sendFailure(new TextComponent(mainColor + "There must be atleast 1 hunter for the game to start!"));
+                                                return 0;
+                                            }
+
+                                            if(game.runner == null || game.runner.get() == null) {
+                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_RUNNER, null));
                                                 return 0;
                                             }
 
@@ -161,6 +166,49 @@ public class RunnerHunterCommand {
                                                 })
                                         )
                                 )
+                                .then(Commands.literal("list")
+                                        .then(Commands.literal("runner")
+                                                .executes(c -> {
+                                                    RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
+                                                    if (game == null) {
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
+                                                        return 0;
+                                                    }
+
+
+                                                    if(game.runner == null) {
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_RUNNER, null));
+                                                        return 0;
+                                                    }
+
+                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner is: %s%s", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, game.runner.get().getScoreboardName())), false);
+
+                                                    return 1;
+                                                })
+                                        )
+                                        .then(Commands.literal("hunters")
+                                                .executes(c -> {
+                                                    RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
+                                                    if (game == null) {
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
+                                                        return 0;
+                                                    }
+
+                                                    if(game.hunters.isEmpty()) {
+                                                        c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.NO_HUNTER, null));
+                                                        return 0;
+                                                    }
+
+                                                    c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's hunters are:", mainColor, secondaryColor, game.gameID, mainColor)), false);
+                                                    for (AccuratePlayer accuratePlayer : game.hunters) {
+                                                        c.getSource().sendSuccess(new TextComponent(String.format("%s» %s%s", mainColor, secondaryColor, accuratePlayer.get().getScoreboardName())), false);
+                                                    }
+
+
+                                                    return 1;
+                                                })
+                                        )
+                                )
                                 .then(Commands.literal("set")
                                         .then(Commands.literal("runner")
                                                 .then(Commands.argument("player", EntityArgument.player())
@@ -190,6 +238,30 @@ public class RunnerHunterCommand {
                                                             }
 
                                                             c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's runner has been set to %s%s", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, player.getScoreboardName())), true);
+
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                        .then(Commands.literal("time")
+                                                .then(Commands.argument("seconds", IntegerArgumentType.integer(10))
+                                                        .executes(c -> {
+                                                            RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
+                                                            if (game == null) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            if (game.hasStarted) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            int time = IntegerArgumentType.getInteger(c, "seconds");
+
+                                                            game.config.maxSeconds = time;
+
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's max seconds has been set to %s%s %sseconds.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, time, mainColor)), true);
 
                                                             return 1;
                                                         })
@@ -401,6 +473,30 @@ public class RunnerHunterCommand {
                                                             game.config.isOneHit = value;
 
                                                             c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option OneHit was %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, ((value) ? "Enabled" : "Disabled"), mainColor)), true);
+
+                                                            return 1;
+                                                        })
+                                                )
+                                        )
+                                        .then(Commands.literal("runner-actionbar-coords")
+                                                .then(Commands.argument("value", BoolArgumentType.bool())
+                                                        .executes(c -> {
+                                                            RunnerHunterGame game = RunnerHunterGame.getGame(UUID.fromString(StringArgumentType.getString(c, "game")));
+                                                            if(game == null) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.INVALID_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            if(game.hasStarted) {
+                                                                c.getSource().sendFailure(RunnerHunterUtil.returnMessage(RunnerHunterUtil.ErrorType.MODIFY_STARTED_GAME, null));
+                                                                return 0;
+                                                            }
+
+                                                            boolean value = BoolArgumentType.getBool(c, "value");
+
+                                                            game.config.runnerActionbarCoords = value;
+
+                                                            c.getSource().sendSuccess(new TextComponent(String.format("%sGame %s%s%s's option Showing Runner's Coordinates in the Actionbar was %s%s%s.", mainColor, secondaryColor, game.gameID, mainColor, secondaryColor, ((value) ? "Enabled" : "Disabled"), mainColor)), true);
 
                                                             return 1;
                                                         })

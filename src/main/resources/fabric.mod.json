@@ -33,8 +33,9 @@
     "minecraft": ["1.16.3-combat.8.c", "1.16.2-1.16.combat-6"],
     "codelib": ">=1.0.1",
     "fantasy": ">=0.4.0",
+    "blf-scheduler": "*",
     "fabric-permissions-api-v0": ">=0.2-SNAPSHOT",
-    "java": ">=8"
+    "java": ">=11"
   },
   "suggests": {
     "saveandloadinventories": "*",

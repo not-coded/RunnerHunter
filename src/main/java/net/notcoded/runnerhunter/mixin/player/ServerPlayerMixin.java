@@ -50,13 +50,23 @@ public class ServerPlayerMixin {
 
         if(game.runner.equals(accuratePlayer)) {
             if(!game.hunters.isEmpty()) {
+
+                ServerPlayer runner = game.runner.get();
+                ServerPlayer hunter = null;
+
                 AccuratePlayer accurateHunter = game.hunters.get(new Random().nextInt(game.hunters.size()));
 
-                if(!game.setRunner(AccuratePlayer.create(accurateHunter.get()), true, true)) return;
-            } else if (!game.isEnding){
-                game.endGame();
-                System.out.println("welp, ending onPlayerLeave()");
-            }
+                if(runner.getLastDamageSource() == null || runner.getLastDamageSource().getEntity() == null || PlayerUtil.getPlayerAttacker(player, runner.getLastDamageSource().getEntity()) == null) {
+                    accurateHunter = game.hunters.get(new Random().nextInt(game.hunters.size()));
+                } else {
+                    hunter = PlayerUtil.getPlayerAttacker(runner, runner.getLastDamageSource().getEntity());
+                }
+
+
+                if(hunter != null && RunnerHunterUtil.isRunnerHunter(hunter) && game.hunters.contains(AccuratePlayer.create(hunter))) accurateHunter = AccuratePlayer.create(hunter);
+
+                if(!game.setRunner(accurateHunter, true, true)) return;
+            } else if (!game.isEnding) game.endGame();
         }
         PlayerDataManager.removePlayerData(player);
     }
@@ -66,7 +76,9 @@ public class ServerPlayerMixin {
         ServerPlayer player = (ServerPlayer) (Object) this;
         if(!RunnerHunterUtil.isRunnerHunter(player)) return;
         RunnerHunterGame game = PlayerDataManager.get(player).runnerHunterGame;
+
         if(damageSource == null || damageSource.getEntity() == null || PlayerUtil.getPlayerAttacker(player, damageSource.getEntity()) == null) {
+            if(game.runner != AccuratePlayer.create(player)) return;
             AccuratePlayer accurateHunter = game.hunters.get(new Random().nextInt(game.hunters.size()));
 
             if(!game.setRunner(AccuratePlayer.create(accurateHunter.get()), true, true)) return;
@@ -74,8 +86,11 @@ public class ServerPlayerMixin {
         }
 
         ServerPlayer attacker = PlayerUtil.getPlayerAttacker(player, damageSource.getEntity());
-        if(!RunnerHunterUtil.isRunnerHunter(attacker) || !game.equals(PlayerDataManager.get(attacker).runnerHunterGame)) return;
+        if(attacker != player) attacker.heal(attacker.getMaxHealth());
+        if(game.runner != AccuratePlayer.create(player)) return;
+        if(game.runner == AccuratePlayer.create(attacker) || !RunnerHunterUtil.isRunnerHunter(attacker) || !game.equals(PlayerDataManager.get(attacker).runnerHunterGame)) return;
 
         if(!game.setRunner(AccuratePlayer.create(attacker), true, true)) return;
     }
+
 }

@@ -5,6 +5,7 @@ import net.notcoded.codelib.util.pos.EntityPos;
 import org.jetbrains.annotations.NotNull;
 
 public class RunnerHunterLevel {
+
     public ServerLevel world;
 
     public EntityPos runnerPos;

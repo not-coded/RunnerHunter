@@ -16,12 +16,12 @@ import java.util.Collections;
 
 public class RunnerHunterUtil {
 
-    public static String mainColor = "§3"; // cyan
-    public static String secondaryColor = "§6"; // gold
+    public static final String mainColor = "§3"; // cyan
+    public static final String secondaryColor = "§6"; // gold
 
     public static boolean isRunnerHunter(Player player) {
         RunnerHunterGame game = PlayerDataManager.get(player).runnerHunterGame;
-        return game != null && game.hasStarted && game.time > 0;
+        return game != null && game.hasStarted && !game.isEnding;
     }
 
     public static ArrayList<String> getListOfInventories() {

@@ -21,7 +21,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Player.class)
 public abstract class PlayerMixin extends LivingEntity {
-    @Shadow public abstract ItemCooldowns getCooldowns();
+    @Shadow
+    public abstract ItemCooldowns getCooldowns();
 
     protected PlayerMixin(EntityType<? extends LivingEntity> entityType, Level level) {
         super(entityType, level);
@@ -33,10 +34,10 @@ public abstract class PlayerMixin extends LivingEntity {
      */
     @Overwrite
     public boolean disableShield(float f) {
-        this.getCooldowns().addCooldown(Items.SHIELD, (int)(f * 20.0F));
+        this.getCooldowns().addCooldown(Items.SHIELD, (int) (f * 20.0F));
         this.stopUsingItem();
-        this.level.broadcastEntityEvent(this, (byte)30);
-        if((this.getLastDamageSource() != null && this.getLastDamageSource().getEntity() != null && PlayerUtil.getPlayerAttacker((Player) (Object) this, this.getLastDamageSource().getEntity()) != null)){
+        this.level.broadcastEntityEvent(this, (byte) 30);
+        if ((this.getLastDamageSource() != null && this.getLastDamageSource().getEntity() != null && PlayerUtil.getPlayerAttacker((Player) (Object) this, this.getLastDamageSource().getEntity()) != null)) {
             //this.level.broadcastEntityEvent(attacker, (byte)30);
             ServerPlayer attacker = PlayerUtil.getPlayerAttacker((Player) (Object) this, this.getLastDamageSource().getEntity());
 
@@ -53,6 +54,6 @@ public abstract class PlayerMixin extends LivingEntity {
     private void drop(boolean dropAll, CallbackInfoReturnable<Boolean> cir) {
         if (!((Object) this instanceof ServerPlayer)) return;
 
-        if(RunnerHunterUtil.isRunnerHunter((ServerPlayer) (Object) this)) cir.setReturnValue(false);
+        if (RunnerHunterUtil.isRunnerHunter((ServerPlayer) (Object) this)) cir.setReturnValue(false);
     }
 }
