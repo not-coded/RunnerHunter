@@ -4,10 +4,15 @@
   "package": "net.notcoded.runnerhunter.mixin",
   "compatibilityLevel": "JAVA_8",
   "server": [
-    "ServerPlayerMixin",
+    "player.ServerPlayerMixin",
+    "player.FoodDataMixin",
+    "player.PlayerListMixin",
+    "player.ServerGamePacketListenerMixin",
+    "player.PlayerMixin",
     "MinecraftServerMixin",
     "entity.PrimedTntMixin",
     "entity.MinecartTNTMixin",
+    "block.BedBlockMixin",
     "items.CrossbowItemMixin"
   ],
   "injectors": {

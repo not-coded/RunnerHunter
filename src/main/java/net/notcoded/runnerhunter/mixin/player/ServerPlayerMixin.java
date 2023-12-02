@@ -1,4 +1,4 @@
-package net.notcoded.runnerhunter.mixin;
+package net.notcoded.runnerhunter.mixin.player;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,13 +34,17 @@ public class ServerPlayerMixin {
     @Inject(at = @At(value = "HEAD"), method = "disconnect")
     private void onPlayerLeave(CallbackInfo ci) {
         ServerPlayer player = (ServerPlayer) (Object) this;
-        if(!RunnerHunterUtil.isRunnerHunter(player)) return;
+        if(!RunnerHunterUtil.isRunnerHunter(player)) {
+            PlayerDataManager.removePlayerData(player);
+            return;
+        }
         AccuratePlayer accuratePlayer = AccuratePlayer.create(player);
 
         RunnerHunterGame game = PlayerDataManager.get(player).runnerHunterGame;
 
         if(game.hunters.contains(accuratePlayer)) {
             RunnerHunterGame.leave(player);
+            PlayerDataManager.removePlayerData(player);
             return;
         }
 
@@ -54,6 +58,7 @@ public class ServerPlayerMixin {
                 System.out.println("welp, ending onPlayerLeave()");
             }
         }
+        PlayerDataManager.removePlayerData(player);
     }
 
     @Inject(at = @At(value = "HEAD"), method = "die")

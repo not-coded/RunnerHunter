@@ -248,6 +248,7 @@ public class RunnerHunterGame {
         runner.inventory.clearContent();
         runner.getEnderChestInventory().clearContent();
         runner.setHealth(runner.getMaxHealth());
+        runner.getFoodData().setFoodLevel(10);
         runner.setGlowing(this.config.glowRunner);
         PlayerDataManager.get(runner).runnerHunterGame = this;
         this.config.level.runnerPos.teleportPlayer(this.config.level.world, runner);

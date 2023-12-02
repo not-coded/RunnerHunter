@@ -4,6 +4,7 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.notcoded.codelib.util.world.WorldUtil;
 import net.notcoded.runnerhunter.game.RunnerHunterGame;
 import net.notcoded.runnerhunter.utilities.player.PlayerDataManager;
@@ -18,7 +19,7 @@ public class RunnerHunterUtil {
     public static String mainColor = "§3"; // cyan
     public static String secondaryColor = "§6"; // gold
 
-    public static boolean isRunnerHunter(ServerPlayer player) {
+    public static boolean isRunnerHunter(Player player) {
         RunnerHunterGame game = PlayerDataManager.get(player).runnerHunterGame;
         return game != null && game.hasStarted && game.time > 0;
     }
@@ -52,9 +53,7 @@ public class RunnerHunterUtil {
         ALREADY_DIMENSION,
         INVALID_GAME,
         MODIFY_STARTED_GAME,
-
         NOT_RUNNER,
-
         NOT_HUNTER
     }
 
